@@ -115,6 +115,7 @@ sealed class Theme(
             strings["progressbar.pending"] = " "
             strings["progressbar.complete"] = "#"
             strings["progressbar.separator"] = ">"
+            strings["hr.rule"] = "-"
 
             strings["markdown.task.checked"] = "[x]"
             strings["markdown.task.unchecked"] = "[ ]"

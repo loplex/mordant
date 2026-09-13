@@ -1,8 +1,18 @@
 package com.github.ajalt.mordant.rendering
 
 import com.github.ajalt.mordant.internal.DEFAULT_STYLE
+import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.widgets.Spinner
+import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import kotlin.js.JsName
 import kotlin.test.Test
+
+private fun BorderTypeSection.chars(): List<String> =
+    listOf(es, esw, sw, nes, nesw, nsw, ne, new, nw, ew, ns, s, n, w, e)
+
+private fun BorderType.chars(): List<String> =
+    listOf(head, headBottom, body, bodyBottom, foot).flatMap { it.chars() }
 
 class ThemeTest {
     private val theme = Theme(Theme.PlainAscii) {
@@ -75,5 +85,27 @@ class ThemeTest {
         t.dimension("foo") shouldBe 11
         t.dimension("bar") shouldBe 23
         t.dimension("baz") shouldBe 33
+    }
+
+    @[Test JsName("ascii_alternatives_contain_only_ascii")]
+    fun `ascii alternatives contain only ascii`() {
+        // These are what a caller falls back to when the default can't be encoded
+        val cases = mapOf(
+            "Theme.PlainAscii" to Theme.PlainAscii.strings.values.toList(),
+            "Spinner.Lines" to Spinner.Lines().let { spinner ->
+                // Rendered rather than copied, so the assertion covers the shipped frames
+                List(4) { Terminal(ansiLevel = AnsiLevel.NONE).render(spinner).also { spinner.advanceTick() } }
+            },
+            "BorderType.ASCII" to BorderType.ASCII.chars(),
+            "BorderType.ASCII_DOUBLE_SECTION_SEPARATOR" to
+                    BorderType.ASCII_DOUBLE_SECTION_SEPARATOR.chars(),
+            "BorderType.BLANK" to BorderType.BLANK.chars(),
+        )
+        for ((name, strings) in cases) {
+            val nonAscii = strings.filter { s -> s.any { it.code >= 0x80 } }
+            withClue("$name contains non-ascii characters: $nonAscii") {
+                nonAscii.isEmpty() shouldBe true
+            }
+        }
     }
 }
