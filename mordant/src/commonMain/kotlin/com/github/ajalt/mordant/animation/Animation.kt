@@ -171,7 +171,7 @@ abstract class Animation<T>(
             startOfLine()
             if (CR_IMPLIES_LF) up(1)
 
-            if (terminal.terminalInfo.supportsAnsiCursor) {
+            if (!terminal.terminalInfo.supportsAnsiCursor) {
                 // IntelliJ doesn't support cursor moves, so this is all we can do
                 return@getMoves
             }

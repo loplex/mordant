@@ -39,7 +39,8 @@ object TerminalDetection {
             ansiHyperLinks = ansiHyperLinks,
             outputInteractive = outputInteractive,
             inputInteractive = inputInteractive,
-            supportsAnsiCursor = ij
+            // the intellij console is the one that can't
+            supportsAnsiCursor = !ij
         )
     }
 

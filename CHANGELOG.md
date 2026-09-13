@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Changed
+- **Breaking Change** `TerminalInfo.supportsAnsiCursor` now holds what its name and documentation say. It was renamed from `crClearsLine` in 3.0.0 without inverting the value, so it stayed `true` only for the one console that can't move the cursor, and anything built from the documented meaning behaved backwards. `TerminalRecorder`'s parameter of the same name now defaults to `true`; code that passes either explicitly needs to flip it.
+
 ## 3.1.0
 ### Added
 - Mouse events on POSIX systems now use the SGR protocol when the terminal supports it, which fixes coordinates in windows larger than 223 cells and adds horizontal wheel and extra button reporting. [(#289)](https://github.com/ajalt/mordant/issues/289)

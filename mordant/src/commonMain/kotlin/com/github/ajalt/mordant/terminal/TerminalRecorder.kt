@@ -28,7 +28,7 @@ class TerminalRecorder private constructor(
         hyperlinks: Boolean = ansiLevel != AnsiLevel.NONE,
         outputInteractive: Boolean = ansiLevel != AnsiLevel.NONE,
         inputInteractive: Boolean = ansiLevel != AnsiLevel.NONE,
-        supportsAnsiCursor: Boolean = false,
+        supportsAnsiCursor: Boolean = true,
     ) : this(
         TerminalInfo(
             ansiLevel = ansiLevel,

@@ -25,9 +25,11 @@ class AnimationTest {
         rec.normalizedOutput() shouldBe "${moves}2\n3"
     }
 
-    @Test
-    fun crClearsLine() {
-        val rec = TerminalRecorder(width = 24, supportsAnsiCursor = true)
+    @[Test JsName("no_cursor_moves_when_unsupported")]
+    fun `no cursor moves when unsupported`() {
+        // A console that can't move the cursor, like IntelliJ's, redraws with a bare carriage
+        // return
+        val rec = TerminalRecorder(width = 24, supportsAnsiCursor = false)
         val t = Terminal(terminalInterface = rec)
         val a = t.textAnimation<Int> { "$it" }
         a.update(1)
@@ -36,6 +38,16 @@ class AnimationTest {
         rec.normalizedOutput() shouldBe "1\r2"
         a.stop()
         rec.normalizedOutput() shouldBe "1\r2\n"
+    }
+
+    @[Test JsName("cursor_moves_when_supported")]
+    fun `cursor moves when supported`() {
+        val rec = TerminalRecorder(width = 24, supportsAnsiCursor = true)
+        val t = Terminal(terminalInterface = rec)
+        val a = t.textAnimation<Int> { "$it" }
+        a.update(1)
+        a.update(2)
+        rec.normalizedOutput() shouldBe "1${t.cursor.getMoves { startOfLine() }}2"
     }
 
     @[Test JsName("print_during_animation")]
