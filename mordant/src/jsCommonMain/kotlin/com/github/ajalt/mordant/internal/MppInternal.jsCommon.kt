@@ -81,5 +81,6 @@ internal actual fun sendInterceptedPrintRequest(
 
 internal actual fun testsHaveFileSystem(): Boolean = impls !is TerminalInterfaceBrowser
 
-// Node doesn't expose the charset it encodes with, so don't degrade output that would render
+// Node writes to a console as utf-16 and to a redirected stream as utf-8, so a code page or a
+// locale never gets to mangle the output
 internal actual fun outputCanEncode(text: String): Boolean = true

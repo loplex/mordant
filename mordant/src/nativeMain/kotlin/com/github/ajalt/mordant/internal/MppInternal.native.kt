@@ -173,6 +173,3 @@ internal actual fun readFileIfExists(filename: String): String? {
 
 internal actual fun exitProcessMpp(status: Int): Unit = exitProcess(status)
 internal actual val CR_IMPLIES_LF: Boolean = false
-
-// The native targets don't expose the charset they encode with, so don't degrade output
-internal actual fun outputCanEncode(text: String): Boolean = true
