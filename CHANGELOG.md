@@ -1,6 +1,14 @@
 # Changelog
 
 ## Unreleased
+### Added
+- The default `Theme` is now chosen from what the terminal's output charset can encode, so a console that can't represent `━` or the box drawing characters gets ASCII ones instead of `?`. Each widget's characters are asked about separately, since a charset can carry some and not others: cp932, the default console code page on a Japanese Windows, encodes the progress bar but no braille. Pass a `theme` explicitly to opt out. [(#249)](https://github.com/ajalt/mordant/issues/249)
+- Added `Terminal.canEncode`, which answers the same question for characters that don't come from the theme, like a `BorderType` or a `Spinner`.
+- Added `Theme.Ascii`, which uses `Theme.Default`'s colors and styles with ASCII characters.
+
+### Changed
+- Themes that ask for ascii characters, including `Theme.PlainAscii`, now apply to `Table` and `Panel` borders as well: a built-in `BorderType` such as `SQUARE` is drawn with its closest ascii equivalent. Border types aren't part of a theme, and a custom one is still drawn exactly as given.
+
 ### Fixed
 - Fixed `Theme.PlainAscii` rendering horizontal rules with `─` (U+2500) instead of an ASCII character.
 

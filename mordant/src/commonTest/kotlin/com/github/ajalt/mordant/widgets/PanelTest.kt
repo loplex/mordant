@@ -30,6 +30,18 @@ class PanelTest : RenderingTest(width = 20) {
         """
     )
 
+    @[Test JsName("ascii_theme_downgrades_the_whole_border")]
+    fun `ascii theme downgrades the whole border`() = checkRender(
+        // The horizontal edges are drawn from the border type too, not just the corners
+        Panel(Text("text"), expand = false),
+        """
+        ░+----+
+        ░|text|
+        ░+----+
+        """,
+        theme = Theme.Ascii,
+    )
+
     @[Test JsName("no_border")]
     fun `no border`() = checkRender(
         Panel(Text("text\nline 2", whitespace = PRE), borderType = null),

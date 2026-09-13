@@ -46,6 +46,11 @@ class TerminalRecorder private constructor(
     var inputLines: MutableList<String> = mutableListOf()
 
     /**
+     * Decides the result of [canEncodeOutput], which returns `true` for everything by default.
+     */
+    var outputEncodable: (String) -> Boolean = { true }
+
+    /**
      * Input events to return when reading in raw mode
      */
     var inputEvents: MutableList<InputEvent> = mutableListOf()
@@ -82,6 +87,8 @@ class TerminalRecorder private constructor(
             output.append("\n")
         }
     }
+
+    override fun canEncodeOutput(text: String): Boolean = outputEncodable(text)
 
     override fun readLineOrNull(hideInput: Boolean): String? = inputLines.removeFirstOrNull()
     override fun getTerminalSize(): Size = size

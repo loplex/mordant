@@ -34,7 +34,8 @@ class Terminal private constructor(
 
     /**
      * @param ansiLevel The level of color support to use, or `null` to detect the level of the current terminal
-     * @param theme The theme to use for widgets and styles like [success]
+     * @param theme The theme to use for widgets and styles like [success], or `null` to use
+     *   [Theme.Default], or [Theme.Ascii] if the output charset can't encode its characters.
      * @param width The width to render widget and wrap text, or `null` to detect the current width.
      * @param height The height of the terminal to use when rendering widgets, or `null` to detect the current width.
      * @param nonInteractiveWidth The width to use when the terminal is not interactive, or `null` to use the default of 79 columns.
@@ -48,7 +49,7 @@ class Terminal private constructor(
      */
     constructor(
         ansiLevel: AnsiLevel? = null,
-        theme: Theme = Theme.Default,
+        theme: Theme? = null,
         width: Int? = null,
         height: Int? = null,
         nonInteractiveWidth: Int? = null,
@@ -58,7 +59,7 @@ class Terminal private constructor(
         interactive: Boolean? = null,
         terminalInterface: TerminalInterface = STANDARD_TERM_INTERFACE,
     ) : this(
-        theme = theme,
+        theme = theme ?: defaultThemeFor(terminalInterface),
         tabWidth = tabWidth,
         terminalInterface = terminalInterface,
         forceWidth = width,
@@ -113,6 +114,17 @@ class Terminal private constructor(
             )
         }.second
     }
+
+    /**
+     * Return `true` if the terminal's output can encode every character in [text].
+     *
+     * Use this for characters that don't come from the [theme], which is picked the same way.
+     *
+     * ```
+     * val spinner = if (terminal.canEncode("⠋")) Spinner.Dots() else Spinner.Lines()
+     * ```
+     */
+    fun canEncode(text: String): Boolean = terminalInterface.canEncodeOutput(text)
 
     /**
      * Functions for controlling the terminal's cursor.
@@ -272,5 +284,31 @@ class Terminal private constructor(
     private fun sendPrintRequest(request: PrintRequest) {
         if (terminalInterface.shouldAutoUpdateSize()) updateSize()
         sendInterceptedPrintRequest(request, terminalInterface, interceptors.value)
+    }
+}
+
+/**
+ * Pick the theme to use when the caller didn't specify one, reading the characters from the themes
+ * so the check stays complete if either changes.
+ *
+ * Strings are swapped by [ASCII_FALLBACK_GROUPS] rather than all at once, which would give up
+ * characters that do encode, or one at a time, which would split up sets designed together.
+ */
+private fun defaultThemeFor(terminalInterface: TerminalInterface): Theme {
+    fun canEncode(text: String) = terminalInterface.canEncodeOutput(text)
+
+    val downgraded = ASCII_FALLBACK_GROUPS.filterNot { group ->
+        canEncode(group.joinToString("") { Theme.Default.strings.getValue(it) })
+    }.flatten()
+    // Border types aren't part of the theme, so ask about them separately
+    val asciiBorders = !canEncode(
+        BorderType.SQUARE.characters() + BorderType.ROUNDED.characters()
+    )
+
+    if (downgraded.isEmpty() && !asciiBorders) return Theme.Default
+    return Theme(Theme.Default) {
+        for (key in downgraded) strings[key] = Theme.Ascii.strings.getValue(key)
+        flags["borders.ascii"] = asciiBorders
+        flags["markdown.table.ascii"] = asciiBorders
     }
 }

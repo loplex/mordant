@@ -90,6 +90,9 @@ sealed class Theme(
             mapOf(
                 "progressbar.pulse" to true,
 
+                // If true, widgets that draw a box fall back to an ascii BorderType
+                "borders.ascii" to false,
+
                 "markdown.code.block.border" to true,
                 "markdown.table.ascii" to false,
             ),
@@ -127,6 +130,19 @@ sealed class Theme(
             strings["select.selected"] = "x"
             strings["select.unselected"] = " "
 
+            flags["borders.ascii"] = true
+            flags["markdown.table.ascii"] = true
+        }
+
+        /**
+         * A theme that uses the same colors and styles as [Default], but only ASCII characters.
+         *
+         * Unlike [PlainAscii], it keeps [Default]'s styles: whether a terminal can encode a
+         * character and whether it can show a color are unrelated.
+         */
+        val Ascii: Theme = Theme(Default) {
+            strings.putAll(PlainAscii.strings)
+            flags["borders.ascii"] = true
             flags["markdown.table.ascii"] = true
         }
     }
@@ -202,3 +218,26 @@ private class BuiltTheme(
     flags: Map<String, Boolean>,
     dimensions: Map<String, Int>,
 ) : Theme(styles, strings, flags, dimensions)
+
+/**
+ * The theme strings that are replaced with their [Theme.Ascii] versions together when the output
+ * can't encode them, so that a widget is never drawn with a mix of ascii and unicode characters.
+ *
+ * Every string that [Theme.Ascii] changes belongs to exactly one group, which `ThemeTest` checks:
+ * a new ascii alternative has to be given a group here instead of being left out of the fallback
+ * silently.
+ */
+internal val ASCII_FALLBACK_GROUPS: List<List<String>> = listOf(
+    listOf("list.bullet.text"),
+    listOf("progressbar.pending", "progressbar.complete", "progressbar.separator"),
+    listOf("hr.rule"),
+    listOf(
+        "markdown.task.checked",
+        "markdown.task.unchecked",
+        "markdown.h1.rule",
+        "markdown.h2.rule",
+        "markdown.blockquote.bar",
+    ),
+    listOf("select.cursor", "select.selected", "select.unselected"),
+)
+

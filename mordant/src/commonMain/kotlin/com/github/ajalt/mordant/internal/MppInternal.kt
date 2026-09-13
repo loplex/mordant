@@ -39,6 +39,9 @@ internal expect fun makePrintingTerminalCursor(terminal: Terminal): TerminalCurs
 
 internal expect fun printStderr(message: String, newline: Boolean)
 
+/** Whether the charset the standard output streams use can encode [text]. */
+internal expect fun outputCanEncode(text: String): Boolean
+
 internal expect fun readLineOrNullMpp(hideInput: Boolean): String?
 
 internal expect fun sendInterceptedPrintRequest(

@@ -80,3 +80,6 @@ internal actual fun sendInterceptedPrintRequest(
 }
 
 internal actual fun testsHaveFileSystem(): Boolean = impls !is TerminalInterfaceBrowser
+
+// Node doesn't expose the charset it encodes with, so don't degrade output that would render
+internal actual fun outputCanEncode(text: String): Boolean = true

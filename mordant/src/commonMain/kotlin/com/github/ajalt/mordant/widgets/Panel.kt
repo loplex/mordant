@@ -138,6 +138,8 @@ class Panel private constructor(
     }
 
     override fun render(t: Terminal, width: Int): Lines {
+        // The theme can ask for ascii borders, and it draws the horizontal rules too
+        val borderType = borderType?.forTheme(t.theme)
         val measurement = measure(t, width)
         val maxContentWidth = maxContentWidth(width)
         val borderStyle = borderStyle[t]

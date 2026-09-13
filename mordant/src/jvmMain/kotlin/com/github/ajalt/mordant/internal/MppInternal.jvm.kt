@@ -4,8 +4,10 @@ import com.github.ajalt.mordant.input.InputEvent
 import com.github.ajalt.mordant.input.MouseTracking
 import com.github.ajalt.mordant.rendering.Size
 import com.github.ajalt.mordant.terminal.*
+import java.io.Console
 import java.io.IOException
 import java.lang.management.ManagementFactory
+import java.nio.charset.Charset
 import java.nio.file.Path
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -67,6 +69,47 @@ internal actual fun printStderr(message: String, newline: Boolean) {
         System.err.println(message)
     } else {
         System.err.print(message)
+    }
+}
+
+/**
+ * The charsets that the output is encoded with, in order of how directly they answer the question.
+ *
+ * `Console.charset` is the supported way to ask, but it exists only on JDK 17 and later, and only
+ * while a console is attached: `System.console()` is null as soon as the output is redirected. The
+ * system properties cover the rest, and are what the streams themselves are built from. They're
+ * named `sun.*` before JDK 19, and the default charset is unrelated to them, so it's the last
+ * resort.
+ */
+private val outputCharsets: List<Charset> by lazy {
+    val console = consoleCharsetOrNull()
+    if (console != null) return@lazy listOf(console)
+
+    val streams = listOf("stdout", "stderr").mapNotNull { stream ->
+        charsetOrNull(System.getProperty("$stream.encoding"))
+            ?: charsetOrNull(System.getProperty("sun.$stream.encoding"))
+    }
+    streams.ifEmpty {
+        listOf(charsetOrNull(System.getProperty("native.encoding")) ?: Charset.defaultCharset())
+    }
+}
+
+/** `System.console()?.charset()`, called reflectively since this module is compiled for JDK 8. */
+private fun consoleCharsetOrNull(): Charset? {
+    val console = System.console() ?: return null
+    return runCatching {
+        Console::class.java.getMethod("charset").invoke(console) as? Charset
+    }.getOrNull()
+}
+
+private fun charsetOrNull(name: String?): Charset? {
+    return name?.let { runCatching { Charset.forName(it) }.getOrNull() }
+}
+
+internal actual fun outputCanEncode(text: String): Boolean {
+    // A new encoder each time, since CharsetEncoder isn't thread safe
+    return outputCharsets.all {
+        runCatching { it.newEncoder().canEncode(text) }.getOrDefault(true)
     }
 }
 

@@ -122,7 +122,7 @@ internal class TableImpl(
     override fun render(t: Terminal, width: Int): Lines {
         return TableRenderer(
             rows = rows,
-            borderType = borderType,
+            borderType = borderType.forTheme(t.theme),
             borderStyle = borderStyle,
             headerRowCount = headerRowCount,
             footerRowCount = footerRowCount,

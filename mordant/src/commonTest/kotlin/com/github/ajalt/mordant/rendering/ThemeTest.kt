@@ -2,6 +2,7 @@ package com.github.ajalt.mordant.rendering
 
 import com.github.ajalt.mordant.internal.DEFAULT_STYLE
 import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.terminal.TerminalRecorder
 import com.github.ajalt.mordant.widgets.Spinner
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -93,7 +94,7 @@ class ThemeTest {
         val cases = mapOf(
             "Theme.PlainAscii" to Theme.PlainAscii.strings.values.toList(),
             "Spinner.Lines" to Spinner.Lines().let { spinner ->
-                // Rendered rather than copied, so the assertion covers the shipped frames
+                // Rendered rather than copied, so this covers the shipped frames
                 List(4) { Terminal(ansiLevel = AnsiLevel.NONE).render(spinner).also { spinner.advanceTick() } }
             },
             "BorderType.ASCII" to BorderType.ASCII.chars(),
@@ -107,5 +108,54 @@ class ThemeTest {
                 nonAscii.isEmpty() shouldBe true
             }
         }
+    }
+
+    @[Test JsName("theme_is_chosen_from_what_the_output_can_encode")]
+    fun `theme is chosen from what the output can encode`() {
+        // An output that can encode everything keeps the unicode theme unchanged
+        Terminal(terminalInterface = TerminalRecorder()).theme shouldBe Theme.Default
+
+        // An ascii-only output falls back, but keeps Default's styles: color is unrelated
+        val ascii = Terminal(terminalInterface = recorder { s -> s.all { it.code < 0x80 } })
+        ascii.theme.strings shouldBe Theme.Ascii.strings
+        ascii.theme.flag("borders.ascii") shouldBe true
+        ascii.theme.style("danger") shouldBe Theme.Default.style("danger")
+
+        // cp932 encodes the bar but no braille or bullets, so only some widgets downgrade
+        val cp932 = Terminal(
+            terminalInterface = recorder { "\u280b" !in it && "\u2022" !in it }
+        )
+        cp932.theme.string("progressbar.complete") shouldBe Theme.Default.string("progressbar.complete")
+        cp932.theme.string("progressbar.separator") shouldBe Theme.Default.string("progressbar.separator")
+        cp932.theme.string("list.bullet.text") shouldBe Theme.Ascii.string("list.bullet.text")
+        cp932.theme.string("select.cursor") shouldBe Theme.Ascii.string("select.cursor")
+        cp932.canEncode("\u2501") shouldBe true
+        cp932.canEncode("\u280b") shouldBe false
+
+        // An explicit theme is always used as given
+        Terminal(
+            theme = Theme.Default,
+            terminalInterface = recorder { false },
+        ).theme shouldBe Theme.Default
+    }
+
+    @[Test JsName("every_ascii_alternative_belongs_to_one_fallback_group")]
+    fun `every ascii alternative belongs to one fallback group`() {
+        val grouped = ASCII_FALLBACK_GROUPS.flatten()
+        withClue("a string is in two groups: $grouped") {
+            grouped.toSet().size shouldBe grouped.size
+        }
+
+        // Pins which strings are swapped together, so the fallback can't silently change shape
+        val alternatives = Theme.Default.strings
+            .filterKeys { Theme.Ascii.strings[it] != Theme.Default.strings[it] }
+            .keys
+        withClue("every string Theme.Ascii changes needs a group to take part in the fallback") {
+            grouped.toSet() shouldBe alternatives
+        }
+    }
+
+    private fun recorder(canEncodeOutput: (String) -> Boolean): TerminalRecorder {
+        return TerminalRecorder().also { it.outputEncodable = canEncodeOutput }
     }
 }

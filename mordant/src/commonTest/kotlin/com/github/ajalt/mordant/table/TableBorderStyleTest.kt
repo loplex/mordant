@@ -1,9 +1,14 @@
 package com.github.ajalt.mordant.table
 
+import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.rendering.BorderType
+import com.github.ajalt.mordant.rendering.Theme
 import com.github.ajalt.mordant.table.Borders.*
+import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.test.RenderingTest
 import com.github.ajalt.mordant.widgets.Padding
+import io.kotest.matchers.shouldBe
+import kotlin.js.JsName
 import kotlin.test.Test
 
 class TableBorderStyleTest : RenderingTest() {
@@ -249,6 +254,28 @@ class TableBorderStyleTest : RenderingTest() {
         ░                                                     ░
         """.trimMargin()
     )
+
+    @[Test JsName("ascii_theme_downgrades_built_in_border_types")]
+    fun `ascii theme downgrades built in border types`() {
+        // BorderType isn't part of the theme, so it's resolved against it at render time
+        fun render(theme: Theme, borderType: BorderType) = Terminal(
+            ansiLevel = AnsiLevel.NONE, theme = theme, width = 20
+        ).render(table {
+            this.borderType = borderType
+            body { row("1", "2") }
+        })
+
+        render(Theme.Ascii, BorderType.SQUARE) shouldBe
+                render(Theme.Default, BorderType.ASCII)
+        render(Theme.Ascii, BorderType.HEAVY_HEAD_FOOT) shouldBe
+                render(Theme.Default, BorderType.ASCII_DOUBLE_SECTION_SEPARATOR)
+        render(Theme.Ascii, BorderType.BLANK) shouldBe
+                render(Theme.Default, BorderType.BLANK)
+
+        // No basis for replacing a custom border type
+        val custom = BorderType.build("123456789ab cde")
+        render(Theme.Ascii, custom) shouldBe render(Theme.Default, custom)
+    }
 
     private fun doTest(borderType: BorderType, expected: String) {
         checkRender(table {

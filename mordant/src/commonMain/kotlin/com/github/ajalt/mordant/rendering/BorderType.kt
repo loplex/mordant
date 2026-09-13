@@ -247,4 +247,33 @@ class BorderType(
             "               ",
         )
     }
+
+    /**
+     * The ascii border type that best matches this one, or `null` if this isn't one of the border
+     * types defined here, since there's no basis for picking a stand-in for a custom one.
+     */
+    internal fun asciiEquivalentOrNull(): BorderType? = when (this) {
+        SQUARE, ROUNDED, HEAVY, DOUBLE -> ASCII
+        SQUARE_DOUBLE_SECTION_SEPARATOR, HEAVY_HEAD_FOOT -> ASCII_DOUBLE_SECTION_SEPARATOR
+        ASCII, ASCII_DOUBLE_SECTION_SEPARATOR, BLANK -> this
+        else -> null
+    }
+}
+
+/** Every character this section draws with. */
+internal fun BorderTypeSection.characters(): String =
+    es + esw + sw + nes + nesw + nsw + ne + new + nw + ew + ns + s + n + w + e
+
+/** Every character this border type draws with. */
+internal fun BorderType.characters(): String =
+    head.characters() + headBottom.characters() + body.characters() +
+            bodyBottom.characters() + foot.characters()
+
+/**
+ * Return the ascii equivalent of this border type if [theme] asks for ascii borders and one is
+ * known, or this border type unchanged otherwise.
+ */
+internal fun BorderType.forTheme(theme: Theme): BorderType {
+    if (!theme.flag("borders.ascii")) return this
+    return asciiEquivalentOrNull() ?: this
 }

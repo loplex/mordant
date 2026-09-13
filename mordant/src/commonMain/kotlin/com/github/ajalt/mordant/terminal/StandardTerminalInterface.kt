@@ -1,5 +1,6 @@
 package com.github.ajalt.mordant.terminal
 
+import com.github.ajalt.mordant.internal.outputCanEncode
 import com.github.ajalt.mordant.internal.printStderr
 import com.github.ajalt.mordant.internal.readLineOrNullMpp
 import com.github.ajalt.mordant.rendering.AnsiLevel
@@ -38,6 +39,8 @@ abstract class StandardTerminalInterface : TerminalInterface {
             else -> print(request.text)
         }
     }
+
+    override fun canEncodeOutput(text: String): Boolean = outputCanEncode(text)
 
     override fun readLineOrNull(hideInput: Boolean): String? = readLineOrNullMpp(hideInput)
 

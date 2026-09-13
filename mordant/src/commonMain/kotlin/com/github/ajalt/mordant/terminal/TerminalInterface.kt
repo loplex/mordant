@@ -40,6 +40,15 @@ interface TerminalInterface {
     fun readLineOrNull(hideInput: Boolean): String?
 
     /**
+     * Return `true` if every character in [text] can be encoded by this interface's output.
+     *
+     * A terminal can render colors and still be unable to encode a box drawing character, so this
+     * is asked per string rather than as one "supports unicode" flag: cp932 encodes `━` but no
+     * braille. The default implementation returns `true`.
+     */
+    fun canEncodeOutput(text: String): Boolean = true
+
+    /**
      * Return the current size, in cells, of the terminal, or null if the size is unknown.
      */
     fun getTerminalSize(): Size? = null
